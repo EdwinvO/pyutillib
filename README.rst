@@ -80,7 +80,8 @@ Working with years
 Simple, but takes leap years into account::
 
     >>> import pyutillib.date_utils as du
-    >>> import datetime as dt    >>> du.last_year(dt.date(2000,2,29))
+    >>> import datetime as dt
+    >>> du.last_year(dt.date(2000,2,29))
     datetime.date(1999, 2, 28)
     >>> du.last_year(dt.date(2001,2,29))
     Traceback (most recent call last):
@@ -91,6 +92,92 @@ Simple, but takes leap years into account::
     >>> du.last_year(dt.date(2001,3,1))
     datetime.date(2000, 3, 1)
 
+The DateList class
+------------------
+
+This class subclasses the standard Python list, so all normal list functionality
+is available. The differences are that there are a few extra methods and that
+the .index method works differently.
+
+**Instantiating:** a list of dates works as expected::
+
+    >>> import pyutillib.date_utils as du
+    >>> import datetime as dt
+    >>> dates = [dt.date(2012, 1, d) for d in range(1, 32)]
+    >>> dl = du.DateList(dates)
+    >>> dl[0]
+    datetime.date(2012, 1, 1)
+    >>> dl[-1]
+    datetime.date(2012, 1, 31)
+
+**index** returns the the index of a date, or (if the date is not in the list), 
+the index of the most recent date before the input date::
+
+    >>> dl.index(dt.date(2012,1,2))
+    1
+    >>> dl.index(dt.date(2012,1,30))
+    29
+    >>> dates2 = [dt.date(2012, 1, d) for d in range(1, 32, 4)]
+    >>> dl2 = du.DateList(dates2)
+    >>> for d in dl2: print d
+    2012-01-01
+    2012-01-05
+    2012-01-09
+    2012-01-13
+    2012-01-17
+    2012-01-21
+    2012-01-25
+    2012-01-29
+    >>> dl2.index(dt.date(2012,1,8))
+    1
+    >>> dl2.index(dt.date(2012,1,9))
+    2
+    >>> dl2.index(dt.date(2012,1,10))
+    2
+
+**on_or_before** returns the input date, or (if the date is not in the list), 
+the most recent date before the input date::
+
+    >>> dl2.on_or_before(dt.date(2012,1,5))
+    datetime.date(2012, 1, 5)
+    >>> dl2.on_or_before(dt.date(2012,1,4))
+    datetime.date(2012, 1, 1)
+    >>> dl2.on_or_before(dt.date(2012,1,6))
+    datetime.date(2012, 1, 5)
+
+**delta** returns the number of days in the list between two dates::
+
+    >>> dl.delta(dt.date(2012,1,10), dt.date(2012,1,20))
+    10
+    >>> dl2.delta(dt.date(2012,1,10), dt.date(2012,1,20))
+    2
+
+**offset** returns the date n_days after (or before if n_days < 0) the input
+date, note that these are not calendar days, but dates in the list::
+
+    >>> dl.offset(dt.date(2012,1,10),3)
+    datetime.date(2012, 1, 13)
+    >>> dl2.offset(dt.date(2012,1,10),3)
+    datetime.date(2012, 1, 21)
+
+**subset** returns a list of dates between two specified dates, only dates that
+are in the original list are included::
+
+    >>> for d in dl.subset(dt.date(2012,1,10), dt.date(2012,1,20)): print d
+    2012-01-10
+    2012-01-11
+    2012-01-12
+    2012-01-13
+    2012-01-14
+    2012-01-15
+    2012-01-16
+    2012-01-17
+    2012-01-18
+    2012-01-19
+    2012-01-20
+    >>> for d in dl2.subset(dt.date(2012,1,10), dt.date(2012,1,20)): print d
+    2012-01-13
+    2012-01-17
 
 Math functions
 ==============

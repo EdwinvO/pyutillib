@@ -220,3 +220,86 @@ def last_year(date_):
     '''
     day = 28 if date_.day == 29 and date_.month == 2 else date_.day
     return datetime.date(date_.year-1, date_.month, day)
+
+
+class DateList(list):
+    '''
+    Provides a list of dates with methods to extract information.
+    The dates list MUST be sorted for the methods of this class to work.
+    '''
+
+    ONE_DAY = datetime.timedelta(days=1)
+
+    def __init__(self, dates, sort=True):
+        '''
+        Constructor stores the list of dates. The list will be sorted by
+        default, you can avoid sorting overhead if you are 100% sure the dates
+        list is sorted by specifying sort=False.
+        '''
+        if sort:
+            dates.sort()
+        list.__init__(self, dates)
+
+    def index(self, date):
+        '''
+        Overloads the default list.index, because of special behaviour if the
+        date is not in the list:
+            - If <date> is not in the list, the index of the latest date before
+                <date> is returned.
+            - If <date> is earlier than the earliest date in the list, the 
+                return value is 0
+            - If <date> is later than the latest date in self.dates the return
+                value is the index of the most recent date.
+        '''
+        if date in self:
+            index = super(DateList, self).index(date)
+        elif date < self[0]:
+            index = 0
+        elif date > self[-1]:
+            index = len(self) - 1
+        else:
+            while date not in self:
+                date -= self.ONE_DAY
+            index = super(DateList, self).index(date)
+        return index
+
+#    def latest_date_before(self, date):
+    def on_or_before(self, date):
+        '''
+        returns the latest date from self.dates that is <= <date>
+        '''
+        return self[self.index(date)]
+
+    def delta(self, fromdate, todate):
+        '''
+        Return the number of dates in the list between <fromdate> and
+        <todate>.
+        '''
+#CONSIDER: raise an exception if a date is not in self
+        return self.index(todate) - self.index(fromdate)
+
+    def offset(self, date, n_days):
+        '''
+        Return the date n_days after (or before if n_days < 0) <date>
+        note: not calender days, but self days!
+        '''
+#CONSIDER: raise an exception if a date is not in self
+        index = self.index(date) + n_days
+        if index < 0:
+            index = 0
+        if index > len(self) - 1:
+            index = len(self) - 1
+        return self[index]
+
+    def subset(self, fromdate, todate):
+        '''
+        Return a list of dates from the list between <fromdate> and <todate>
+        (inclusive)
+        '''
+#CONSIDER: raise an exception if a date is not in self
+        i_from = self.index(fromdate)
+        if fromdate != self[i_from]:
+            # don't go back before fromdate
+            i_from += 1
+        i_to = self.index(todate)
+        return self[i_from:i_to + 1]

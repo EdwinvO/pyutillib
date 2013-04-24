@@ -20,7 +20,7 @@ along with this program.  If not, see `<http://www.gnu.org/licenses/>`.
 from __future__ import division
 from __future__ import absolute_import
 
-import unittest
+from unittest import TestCase, main
 import datetime as dt
 
 import pyutillib.date_utils as du
@@ -28,7 +28,7 @@ import pyutillib.math_utils as mu
 import pyutillib.string_utils as su
 
 
-class TestDateUtils(unittest.TestCase):
+class TestDateUtils(TestCase):
     '''
     '''
 
@@ -116,7 +116,102 @@ class TestDateUtils(unittest.TestCase):
         self.assertEqual(du.last_year(dt.date(2000,2,29)), dt.date(1999,2,28))
 
 
-class TestMathUtils(unittest.TestCase):
+class DateListTests(TestCase):
+
+    def setUp(self):
+        self.range = range(0, 31)
+        self.range_gaps = range(0,31,4)
+        self.indates = [dt.date(2012,1,x+1) for x in self.range]
+        self.indates_gaps = [dt.date(2012,1,x+1) for x in self.range_gaps]
+        self.dates = du.DateList(self.indates)
+        self.dates_gaps = du.DateList(self.indates_gaps)
+
+    def test_index(self):
+        # continuous
+        self.assertEqual(len(self.indates), len(self.dates))
+        for day in self.range:
+            self.assertEqual(self.indates[day], self.dates[day])
+        # intermittent
+        self.assertEqual(len(self.indates_gaps), len(self.dates_gaps))
+        for i, day in enumerate(self.range_gaps):
+            self.assertEqual(self.indates_gaps[i], self.dates_gaps[i])
+        # boundaries on standard set
+        self.assertEqual(self.dates.index(dt.date(2011, 11, 30)), 0)
+        self.assertEqual(self.dates.index(dt.date(2012, 3, 1)), 30)
+        # boundaries on intermittent set
+        self.assertEqual(self.dates_gaps.index(dt.date(2011, 11, 30)), 0)
+        self.assertEqual(self.dates_gaps.index(dt.date(2012, 3, 1)), 7)
+        # all dates in intermittent set
+        for i_in, indate in zip(self.range, self.indates):
+            self.assertEqual(self.dates.index(indate), i_in)
+            self.assertEqual(self.dates_gaps.index(indate), i_in // 4)
+
+    def test_on_or_before(self):
+        self.assertEqual(self.dates.on_or_before(dt.date(2011, 11, 30)),
+                    self.dates[0])
+        self.assertEqual(self.dates.on_or_before(dt.date(2012, 3, 1)),
+                    self.dates[-1])
+        for i_in, indate in zip(self.range, self.indates):
+            self.assertEqual(self.dates.on_or_before(indate), 
+                    self.dates[i_in])
+            self.assertEqual(self.dates_gaps.on_or_before(indate),
+                    self.dates_gaps[i_in // 4])
+
+    def test_delta(self):
+        for delta in range(1, 15):
+            fromdate = self.indates[4]
+            todate = self.indates[4 + delta]
+            self.assertEqual(self.dates.delta(fromdate, todate), delta)
+            self.assertEqual(self.dates_gaps.delta(fromdate, todate), delta //4)
+        for delta in range(1, 6):
+            fromdate = self.indates_gaps[1]
+            todate = self.indates_gaps[1 + delta]
+            self.assertEqual(self.dates.delta(fromdate, todate), 4 * delta)
+            self.assertEqual(self.dates_gaps.delta(fromdate, todate), delta)
+        # edgecases
+        fromdate = dt.date(2011, 11, 30)
+        todate = self.indates[0]
+        self.assertEqual(self.dates.delta(fromdate, todate), 0)
+        fromdate = self.indates[-1]
+        todate = dt.date(2012, 3, 1)
+        self.assertEqual(self.dates.delta(fromdate, todate), 0)
+
+    def test_offset(self):
+        for n_days in range(-10, 10):
+            fromdate = self.indates[15]
+            todate = self.indates[15 +  n_days]
+            self.assertEqual(self.dates.offset(fromdate, n_days), todate)
+        for n_days in range(-3, 3):
+            fromdate = self.indates_gaps[3]
+            todate = self.indates_gaps[3 +  n_days]
+            self.assertEqual(self.dates_gaps.offset(fromdate, n_days), todate)
+        # edgecases
+        fromdate = self.indates[15]
+        todate = self.indates[0]
+        self.assertEqual(self.dates.offset(fromdate, -100), todate)
+        fromdate = self.indates[15]
+        todate = self.indates[-1]
+        self.assertEqual(self.dates.offset(fromdate, 100), todate)
+        # edgecases with gaps
+        fromdate = self.indates[2]
+        todate = self.indates[0]
+        self.assertEqual(self.dates_gaps.offset(fromdate, -100), todate)
+        fromdate = self.indates[2]
+        todate = self.indates_gaps[2]
+        self.assertEqual(self.dates_gaps.offset(fromdate, 2), todate)
+
+    def test_subset(self):
+        fromdate = self.indates[10]
+        todate = self.indates[20]
+        self.assertEqual(self.dates.subset(fromdate, todate), 
+                self.indates[10:21])
+        fromdate = self.indates[10]
+        todate = self.indates[20]
+        self.assertEqual(self.dates_gaps.subset(fromdate, todate), 
+                self.indates_gaps[3:6])
+
+
+class TestMathUtils(TestCase):
 
     def setUp(self):
         pass
@@ -207,7 +302,7 @@ class TestMathUtils(unittest.TestCase):
             self.assertRaises(ValueError, mu.eval_conditions, conditions, data)
 
 
-class TestStringUtils(unittest.TestCase):
+class TestStringUtils(TestCase):
 
     def setUp(self):
         pass
@@ -267,4 +362,4 @@ class TestStringUtils(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

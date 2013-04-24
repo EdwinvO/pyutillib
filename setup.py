@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setup(
     name='pyutillib',
-    version='0.1.0',
+    version='0.2.0',
     author='Edwin van Opstal',
     author_email='evo.se-technology.com',
     url='http://github.com/EdwinvO/pyutillib',
