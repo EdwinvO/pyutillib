@@ -132,3 +132,45 @@ def str2dict_values(str_in):
     if tmp_dict is None:
         return None
     return [tmp_dict[key] for key in sorted(k for k in tmp_dict)]
+
+
+def decstr2int(dec_str, decimals):
+    '''
+    Returns an integer that has the value of the decimal string:
+        dec_str*10^decimals
+
+    Arguments:
+        dec_str (string) that represents a decimal number
+        decimals (int): number of decimals for creating the integer output
+    Returns:
+        (int)
+    Raises:
+        ValueError if dec_string is not a valid decimal string
+        TypeError if decimals is not an integer
+    Note: values may be truncated (not rounded).
+    '''
+    if not isinstance(decimals, int):
+        raise TypeError('decimals must be an integer')
+    try:
+        dollars, cents = dec_str.split('.')
+    except ValueError:
+        if '.' not in dec_str:
+            dollars = dec_str
+            cents = '0'
+        else:
+            raise ValueError('Invalid decimal string')
+    else:
+        if len(cents) < decimals:
+            cents = cents.ljust(decimals, '0')
+        elif decimals < 1:
+            cents = '0'
+        elif len(cents) > decimals:
+            cents = cents[:decimals]
+    try:
+        cents = int(cents)
+    except:
+        cents = 0
+    try:
+        return int(int(dollars) * (10 ** decimals)) + cents
+    except:
+        raise ValueError('Invalid decimal string')

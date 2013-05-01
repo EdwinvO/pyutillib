@@ -1,6 +1,9 @@
 '''
 pyutillib/tests
 
+usage:
+    python -m pyutillib.tests
+
 Copyright (C) 2013 Edwin van Opstal
 
 This program is free software: you can redistribute it and/or modify
@@ -34,6 +37,7 @@ class TestDateUtils(TestCase):
 
     def setUp(self):
         dd = dt.date
+        tm = dt.time
         self.validdata = (
             {'date': dd(2000,1,31), 'str': '20000131', 'fmt': 'yyyymmdd'},
             {'date': dd(2000,1,31), 'str': '000131', 'fmt': 'yymmdd'},
@@ -45,6 +49,18 @@ class TestDateUtils(TestCase):
             {'date': dd(2000,1,31), 'str': '1/31/2000', 'fmt': 'm/d/yyyy'},
             {'date': dd(2000,1,31), 'str': '01/31/00', 'fmt': 'mm/dd/yy'},
             {'date': dd(2000,1,31), 'str': '01/31/2000', 'fmt': 'mm/dd/yyyy'},
+            )
+        self.validtime = (
+            {'time': tm(13,1,50), 'str': '130150', 'fmt': 'hhmmss'},
+            {'time': tm(13,1,50), 'str': '13:01:50', 'fmt': 'hh:mm:ss'},
+            {'time': tm(13,1,50), 'str': '13:01:50', 'fmt': 'h:mm:ss'},
+            {'time': tm(13,1,0), 'str': '13:01', 'fmt': 'hh:mm'},
+            {'time': tm(13,1,0), 'str': '13:01', 'fmt': 'h:mm'},
+            {'time': tm(7,1,50), 'str': '070150', 'fmt': 'hhmmss'},
+            {'time': tm(7,1,50), 'str': '07:01:50', 'fmt': 'hh:mm:ss'},
+            {'time': tm(7,1,50), 'str': '7:01:50', 'fmt': 'h:mm:ss'},
+            {'time': tm(7,1,0), 'str': '07:01', 'fmt': 'hh:mm'},
+            {'time': tm(7,1,0), 'str': '7:01', 'fmt': 'h:mm'},
             )
         self.weekdays = (dd(2013,2,22), dd(2013,2,25), dd(2013,2,26), 
                 dd(2013,2,27), dd(2013,2,28), dd(2013,3,1), dd(2013,3,4))
@@ -114,6 +130,38 @@ class TestDateUtils(TestCase):
         self.assertEqual(du.last_year(dt.date(2000,3,29)), dt.date(1999,3,29))
         self.assertEqual(du.last_year(dt.date(2000,2,27)), dt.date(1999,2,27))
         self.assertEqual(du.last_year(dt.date(2000,2,29)), dt.date(1999,2,28))
+
+
+    def test_timestr2time(self):
+        for time in self.validtime:
+            self.assertEqual(du.timestr2time(time['str']), time['time'])
+
+        invalidtimeformats = ('1', '11', '111', '1111', '11111', '1111111',
+            '111111111', '1111111111', '1111011', '1101111', 
+            '13.05', '12:123:00', '12:12:0', '12:0:12', '12:01:', ':12:12',
+            '1:05pm',
+            )
+        for time_str in invalidtimeformats:
+            self.assertRaises(ValueError, du.timestr2time, time_str)
+
+        invalidtimes = ('25:02', '03:65')
+        for time_str in invalidtimes:
+            self.assertRaises(ValueError, du.timestr2time, time_str)
+
+
+    def test_time2timestr(self):
+        #default fmt:
+        self.assertEqual(du.time2timestr(self.validtime[0]['time']), 
+                    self.validtime[0]['str'])
+        #with format specifier
+        for time in self.validtime:
+            self.assertEqual(du.time2timestr(time['time'], time['fmt']), 
+                    time['str'])
+        invalidformats = ('hmmss', 'hhmss', 'hhmms', 'hmm', 'hhmm', 'hh:m:ss',
+                'hh:mm:s', 'hh:m', 'h:m')
+        time = dt.time(23,59,59)
+        for fmt in invalidformats:
+            self.assertRaises(ValueError, du.time2timestr, time, fmt)
 
 
 class DateListTests(TestCase):
@@ -359,6 +407,27 @@ class TestStringUtils(TestCase):
         self.assertIsNone(su.str2dict_values('asdf'))
         self.assertEqual(su.str2dict_keys(dict_string), [-1, 2, 'a'])
         self.assertIsNone(su.str2dict_keys('asdf'))
+
+
+    def test_decstr2int(self):
+        self.assertEqual(su.decstr2int('123.456', -4), 0)
+        self.assertEqual(su.decstr2int('123.456', -3), 0)
+        self.assertEqual(su.decstr2int('123.456', -2), 1)
+        self.assertEqual(su.decstr2int('123.456', -1), 12)
+        self.assertEqual(su.decstr2int('123.456', 0), 123)
+        self.assertEqual(su.decstr2int('123.456', 1), 1234)
+        self.assertEqual(su.decstr2int('123.456', 2), 12345)
+        self.assertEqual(su.decstr2int('123.456', 3), 123456)
+        self.assertEqual(su.decstr2int('123.456', 4), 1234560)
+        self.assertEqual(su.decstr2int('123.456', 5), 12345600)
+        self.assertEqual(su.decstr2int('123', -1), 12)
+        self.assertEqual(su.decstr2int('123', 0), 123)
+        self.assertEqual(su.decstr2int('123', 1), 1230)
+        self.assertEqual(su.decstr2int('123', 2), 12300)
+        self.assertRaises(TypeError, su.decstr2int, '1.2', 0.5)
+        self.assertRaises(ValueError, su.decstr2int, '1e2', 1)
+        self.assertRaises(ValueError, su.decstr2int, '1.2.3', 1)
+        self.assertRaises(ValueError, su.decstr2int, '', 1)
 
 
 if __name__ == '__main__':

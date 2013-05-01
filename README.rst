@@ -179,6 +179,65 @@ are in the original list are included::
     2012-01-13
     2012-01-17
 
+Working with time strings
+-------------------------
+
+In order to have an unambiguous relation between a time in string and 
+datetime.time format, only a limited number of formats is available. The 
+default is often good enough.
+
+Usage examples::
+
+    >>> from pyutillib import date_utils as du
+    >>> du.timestr2time('123456')
+    datetime.time(12, 34, 56)
+    >>> du.timestr2time('12:34:56')
+    datetime.time(12, 34, 56)
+    >>> du.timestr2time('12:34')
+    datetime.time(12, 34)
+    >>> du.timestr2time('01:23')
+    datetime.time(1, 23)
+    >>> du.timestr2time('1:23')
+    datetime.time(1, 23)
+    
+    >>> import datetime
+    >>> t = datetime.time(23,59,59)
+    >>> du.time2timestr(t)
+    hhmmss 23:59:59
+    '235959'
+    >>> du.time2timestr(t, 'hh:mm')
+    hh:mm 23:59:59
+    '23:59'
+    >>> du.time2timestr(t, 'hh:mm:ss')
+    hh:mm:ss 23:59:59
+    '23:59:59'
+    >>> t = datetime.time(5,59,59)
+    >>> du.time2timestr(t)
+    hhmmss 05:59:59
+    '055959'
+    >>> du.time2timestr(t, 'hh:mm:ss')
+    hh:mm:ss 05:59:59
+    '05:59:59'
+    >>> du.time2timestr(t, 'h:mm:ss')
+    h:mm:ss 05:59:59
+    '5:59:59'
+    >>> du.time2timestr(t, 'h:mm')
+    h:mm 05:59:59
+    '5:59'
+    >>> du.time2timestr(t, 'hmmss')
+    hmmss 05:59:59
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "pyutillib/date_utils.py", line 383, in time2timestr
+        else:
+    ValueError: Invalid character in format string. The following time formats are valid:
+        hhmmss
+        hh:mm:ss    h:mm:ss
+        hh:mm       h:mm
+    Where in the latter 2 formats hh has d digits which may include a leading zero
+    and h may have 1 or 2 digits and no leading zero. 
+    h/hh is always in 24 hour clock.
+
 Math functions
 ==============
 
@@ -294,3 +353,24 @@ alphabetic order::
     [-1, 2, 'a']
     >>> print su.str2dict_values('{"a":1, 2:"3", -1: 0}')
     [0, '3', 1]
+
+Translating a decimal string to an int
+--------------------------------------
+
+This function takes a string that represents a decimal number and returns an 
+integer. The *decimals* argument allows you to 'shift the decimal point', e.g.::
+
+    >>> from pyutillib import string_utils as su
+    >>> su.decstr2int('123.456', 3)
+    123456
+    >>> su.decstr2int('123.456', 2)
+    12345
+    >>> su.decstr2int('123.456', 4)
+    1234560
+    >>> su.decstr2int('123', 4)
+    1230000
+    >>> su.decstr2int('123.456', -1)
+    12
+
+Note from the above examples that the input string does not need to contain a 
+decimal point and also the decimals argument may be negative (or 0).

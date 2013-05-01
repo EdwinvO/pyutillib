@@ -303,3 +303,105 @@ class DateList(list):
             i_from += 1
         i_to = self.index(todate)
         return self[i_from:i_to + 1]
+
+
+VALID_TIME_FORMATS_TEXT = '''The following time formats are valid:
+    hhmmss
+    hh:mm:ss    h:mm:ss
+    hh:mm       h:mm
+Where in the latter 2 formats hh has d digits which may include a leading zero
+and h may have 1 or 2 digits and no leading zero. 
+h/hh is always in 24 hour clock.
+'''
+
+def timestr2time(time_str):
+    '''
+    Turns a string into a datetime.time object. This will only work if the 
+    format can be "guessed", so the string must have one of the formats from
+    VALID_TIME_FORMATS_TEXT.
+
+    Args:
+        time_str (str) a string that represents a date
+    Returns:
+        datetime.time object
+    Raises:
+        ValueError if the input string does not have a valid format.
+    '''
+    if any(c not in '0123456789:' for c in time_str):
+        raise ValueError('Illegal character in time string')
+    if time_str.count(':') == 2:
+        h, m, s = time_str.split(':')
+    elif time_str.count(':') == 1:
+        h, m = time_str.split(':')
+        s = '00'
+    elif len(time_str) == 6:
+        h = time_str[:2]
+        m = time_str[2:4]
+        s = time_str[4:]
+    else:
+        raise ValueError('Time format not recognised. {}'.format(
+                VALID_TIME_FORMATS_TEXT))
+    if len(m) == 2 and len(s) == 2:
+        mins = int(m)
+        sec = int(s)
+    else:
+        raise ValueError('m and s must be 2 digits')
+    try:
+        return datetime.time(int(h), mins, sec)
+    except ValueError:
+        raise ValueError('Invalid time {}. {}'.format(time_str, 
+                VALID_TIME_FORMATS_TEXT))
+
+def time2timestr(time, fmt='hhmmss'):
+    '''
+    Turns a datetime.time object into a string. The string must have one of the
+    formats from VALID_TIME_FORMATS_TEXT to make it compatible with 
+    timestr2time.
+
+    Args:
+        time (datetime.time) the time to be translated
+        fmt (str) a format string.
+    Returns:
+        (str) that represents a time.
+    Raises:
+        ValueError if the format is not valid.
+    '''
+    if fmt.count(':') == 2:
+        if not fmt.index('h') < fmt.index('m') < fmt.index('s'):
+            raise ValueError('Invalid format string. {}'.format(
+                    VALID_TIME_FORMATS_TEXT))
+        h, m, s = fmt.split(':')
+    elif fmt.count(':') == 1:
+        if not fmt.index('h') < fmt.index('m'):
+            raise ValueError('Invalid format string. {}'.format(
+                    VALID_TIME_FORMATS_TEXT))
+        h, m = fmt.split(':')
+        s = None
+    elif any(c not in 'hms' for c in fmt) or len(fmt) != 6:
+        raise ValueError('Invalid character in format string. {}'.format(
+                VALID_TIME_FORMATS_TEXT))
+    else:
+        if not fmt.index('h') < fmt.index('m') < fmt.index('s'):
+            raise ValueError('Invalid format string. {}'.format(
+                    VALID_TIME_FORMATS_TEXT))
+        h, m, s = fmt[:-4], fmt[-4:-2], fmt[-2:]
+    for string, char in ((h, 'h'), (m, 'm'), (s, 's')):
+        if string is not None and any(c != char for c in string):
+            raise ValueError('Invalid date format: {} is not {}'.\
+                    format(char, string))
+    if len(h) == 2:
+        fmt = fmt.replace('hh', '%H', 1)
+    elif len(h) == 1:
+        fmt = fmt.replace('h', 'X%H', 1)
+    else:
+        raise ValueError('Invalid format string, hour must have 1 or 2 digits')
+    if len(m) == 2:
+        fmt = fmt.replace('mm', '%M', 1)
+    else:
+        raise ValueError('Invalid format string, minutes must have 2 digits')
+    if s is not None and len(s) == 2:
+        fmt = fmt. replace('ss', '%S', 1)
+    elif s is not None:
+        raise ValueError('Invalid format string, seconds must have 2 digits')
+    return time.strftime(fmt).replace('X0','X').replace('X','')
+

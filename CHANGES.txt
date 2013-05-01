@@ -1,3 +1,4 @@
 v0.1.0, 20130416 -- Initial release.
 v0.1.1, 20130416 -- updated README
 v0.2.0, 20130424 -- added DateList class
+v0.3.0, 20130501 -- added time2timestr, timestr2time and decstr2int functions
